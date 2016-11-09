@@ -63,16 +63,20 @@ public abstract class AbstractBlackBoxTestCase extends Assert {
   private final BarcodeFormat expectedFormat;
   private final List<TestResult> testResults;
 
-  protected AbstractBlackBoxTestCase(String testBasePathSuffix,
-                                     Reader barcodeReader,
-                                     BarcodeFormat expectedFormat) {
+  public static Path buildTestBase(String testBasePathSuffix) {
     // A little workaround to prevent aggravation in my IDE
     Path testBase = Paths.get(testBasePathSuffix);
     if (!Files.exists(testBase)) {
       // try starting with 'core' since the test base is often given as the project root
       testBase = Paths.get("core").resolve(testBasePathSuffix);
     }
-    this.testBase = testBase;
+    return testBase;
+  }
+
+  protected AbstractBlackBoxTestCase(String testBasePathSuffix,
+                                     Reader barcodeReader,
+                                     BarcodeFormat expectedFormat) {
+    this.testBase = buildTestBase(testBasePathSuffix);
     this.barcodeReader = barcodeReader;
     this.expectedFormat = expectedFormat;
     testResults = new ArrayList<>();
@@ -261,7 +265,20 @@ public abstract class AbstractBlackBoxTestCase extends Assert {
       hints.put(DecodeHintType.TRY_HARDER, Boolean.TRUE);
     }
 
-    Result result = barcodeReader.decode(source, hints);
+    // Try in 'pure' mode mostly to exercise PURE_BARCODE code paths for exceptions;
+    // not expected to pass, generally
+    Result result = null;
+    try {
+      Map<DecodeHintType,Object> pureHints = new EnumMap<>(hints);
+      pureHints.put(DecodeHintType.PURE_BARCODE, Boolean.TRUE);
+      result = barcodeReader.decode(source, pureHints);
+    } catch (ReaderException re) {
+      // continue
+    }
+
+    if (result == null) {
+      result = barcodeReader.decode(source, hints);
+    }
 
     if (expectedFormat != result.getBarcodeFormat()) {
       log.info(String.format("Format mismatch: expected '%s' but got '%s'%s",
