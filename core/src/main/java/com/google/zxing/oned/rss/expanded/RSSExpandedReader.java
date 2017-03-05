@@ -127,16 +127,14 @@ public final class RSSExpandedReader extends AbstractRSSReader {
     this.pairs.clear();
     this.startFromEven = false;
     try {
-      List<ExpandedPair> pairs = decodeRow2pairs(rowNumber, row);
-      return constructResult(pairs);
+      return constructResult(decodeRow2pairs(rowNumber, row));
     } catch (NotFoundException e) {
       // OK
     }
 
     this.pairs.clear();
     this.startFromEven = true;
-    List<ExpandedPair> pairs = decodeRow2pairs(rowNumber, row);
-    return constructResult(pairs);
+    return constructResult(decodeRow2pairs(rowNumber, row));
   }
 
   @Override
@@ -243,7 +241,7 @@ public final class RSSExpandedReader extends AbstractRSSReader {
     throw NotFoundException.getNotFoundInstance();
   }
 
-  // Whether the pairs form a valid find pattern seqience,
+  // Whether the pairs form a valid find pattern sequence,
   // either complete or a prefix
   private static boolean isValidSequence(List<ExpandedPair> pairs) {
     for (int[] sequence : FINDER_PATTERN_SEQUENCES) {
@@ -493,7 +491,7 @@ public final class RSSExpandedReader extends AbstractRSSReader {
     int counterPosition = 0;
     int patternStart = rowOffset;
     for (int x = rowOffset; x < width; x++) {
-      if (row.get(x) ^ isWhite) {
+      if (row.get(x) != isWhite) {
         counters[counterPosition]++;
       } else {
         if (counterPosition == 3) {
